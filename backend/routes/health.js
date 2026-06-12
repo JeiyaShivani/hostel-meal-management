@@ -3,11 +3,9 @@ import mongoose from 'mongoose';
 
 const router = express.Router();
 
-// GET /api/health
 router.get('/health', (req, res) => {
   const readyState = mongoose.connection.readyState;
-  
-  const connectionStates = {
+  const states = {
     0: 'Disconnected',
     1: 'Connected',
     2: 'Connecting',
@@ -18,8 +16,8 @@ router.get('/health', (req, res) => {
     status: 'OK',
     message: 'Backend Connected',
     database: {
-      status: connectionStates[readyState] || 'Unknown',
-      readyState: readyState
+      status: states[readyState] || 'Unknown',
+      readyState
     }
   });
 });

@@ -1,8 +1,59 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
+import Login from './pages/Login';
+import StudentDashboard from './pages/StudentDashboard';
+import StaffDashboard from './pages/StaffDashboard';
+import ScanPass from './pages/ScanPass';
 
 function App() {
-  return <Home />;
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+  }, []);
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+  };
+
+  return (
+    <Router>
+      <div style={{ minHeight: '100vh', background: '#0f172a' }}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route 
+            path="/login" 
+            element={user ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />} 
+          />
+          <Route 
+            path="/dashboard" 
+            element={
+              user ? (
+                user.role === 'staff' ? 
+                <StaffDashboard user={user} onLogout={handleLogout} /> : 
+                <StudentDashboard user={user} onLogout={handleLogout} />
+              ) : <Navigate to="/login" />
+            } 
+          />
+          <Route 
+            path="/scan" 
+            element={user && user.role === 'staff' ? <ScanPass user={user} /> : <Navigate to="/login" />} 
+          />
+        </Routes>
+      </div>
+    </Router>
+  );
 }
 
 export default App;
