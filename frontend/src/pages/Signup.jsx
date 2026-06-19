@@ -4,9 +4,12 @@ import api from '../api/api';
 import { getFriendlyErrorMessage } from '../utils/errorUtils';
 
 
-const Login = ({ onLogin }) => {
-  const [registerNo, setRegisterNo] = useState('');
-  const [password, setPassword] = useState('');
+const Signup = ({ onLogin }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    registerNo: '',
+    password: ''
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -14,16 +17,17 @@ const Login = ({ onLogin }) => {
   // Single static quote
   const activeQuote = "Efficiency is the backbone of operational excellence.";
 
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/login', {
-        registerNo,
-        password
-      });
+      const response = await api.post('/auth/register', formData);
 
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -33,8 +37,8 @@ const Login = ({ onLogin }) => {
       }
       navigate('/dashboard');
     } catch (err) {
-      console.error('Login error:', err);
-      setError(getFriendlyErrorMessage(err, 'Login failed. Please verify credentials.'));
+      console.error('Registration error:', err);
+      setError(getFriendlyErrorMessage(err, 'Registration failed. Please check your details.'));
     } finally {
       setLoading(false);
     }
@@ -42,7 +46,7 @@ const Login = ({ onLogin }) => {
 
   return (
     <div className="login-page-container">
-      {/* Left Pane - Brand & Vision */}
+      {/* Left Pane */}
       <div className="login-side-asset">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '4rem' }}>
@@ -51,7 +55,7 @@ const Login = ({ onLogin }) => {
           </div>
           
           <h1 className="hero-text">
-            Dining operations, <span style={{ color: 'var(--primary)' }}>streamlined.</span>
+            Join the <span style={{ color: 'var(--primary)' }}>network.</span>
           </h1>
         </div>
 
@@ -62,12 +66,12 @@ const Login = ({ onLogin }) => {
         </div>
       </div>
 
-      {/* Right Pane - Form Card */}
+      {/* Right Pane */}
       <div className="login-form-pane">
         <div className="glass-card animate-fade-in login-card">
           <div style={{ marginBottom: '2.5rem' }}>
-            <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'white', marginBottom: '0.5rem' }}>Access Portal</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9375rem' }}>Enter your credentials to continue.</p>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'white', marginBottom: '0.5rem' }}>Create Account</h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9375rem' }}>Register as a student to access the portal.</p>
           </div>
           
           {error && (
@@ -85,62 +89,53 @@ const Login = ({ onLogin }) => {
           )}
 
           <form onSubmit={handleSubmit}>
-            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-              <label htmlFor="registerNo" style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Identity</label>
+            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+              <label htmlFor="name" style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Name</label>
+              <input
+                type="text"
+                id="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="John Doe"
+                style={{ background: 'rgba(30, 41, 59, 0.5)', border: '1px solid rgba(255,255,255,0.1)', height: '3.25rem' }}
+                required
+              />
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+              <label htmlFor="registerNo" style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Register Number</label>
               <input
                 type="text"
                 id="registerNo"
-                value={registerNo}
-                onChange={(e) => setRegisterNo(e.target.value)}
-                placeholder="Reg No (e.g. 22CSR001)"
-                style={{ 
-                  background: 'rgba(30, 41, 59, 0.5)', 
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  height: '3.5rem',
-                  fontSize: '1rem'
-                }}
+                value={formData.registerNo}
+                onChange={handleChange}
+                placeholder="22CSR001"
+                style={{ background: 'rgba(30, 41, 59, 0.5)', border: '1px solid rgba(255,255,255,0.1)', height: '3.25rem' }}
                 required
               />
             </div>
 
-            <div className="form-group" style={{ marginBottom: '2.5rem' }}>
-              <label htmlFor="password" style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Security Key</label>
+            <div className="form-group" style={{ marginBottom: '2rem' }}>
+              <label htmlFor="password" style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Set Password</label>
               <input
                 type="password"
                 id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={handleChange}
                 placeholder="••••••••"
-                style={{ 
-                  background: 'rgba(30, 41, 59, 0.5)', 
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  height: '3.5rem',
-                  fontSize: '1rem'
-                }}
+                style={{ background: 'rgba(30, 41, 59, 0.5)', border: '1px solid rgba(255,255,255,0.1)', height: '3.25rem' }}
                 required
               />
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary" style={{ 
-              width: '100%', 
-              height: '3.5rem', 
-              fontSize: '1rem', 
-              fontWeight: '700',
-              boxShadow: '0 10px 15px -3px rgba(56, 189, 248, 0.2)' 
-            }}>
-              {loading ? 'Authenticating...' : 'Sign In'}
+            <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', height: '3.5rem', fontSize: '1rem', fontWeight: '700' }}>
+              {loading ? 'Creating Account...' : 'Complete Registration'}
             </button>
           </form>
-
+          
           <div style={{ marginTop: '2rem', textAlign: 'center' }}>
             <p style={{ fontSize: '0.9375rem', color: 'var(--text-muted)' }}>
-              New student? <Link to="/signup" style={{ color: 'var(--primary)', fontWeight: '600', textDecoration: 'none' }}>Create an account</Link>
-            </p>
-          </div>
-          
-          <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-              Corporate Campus Dining Systems • <span style={{ color: 'white' }}>Enterprise v1.2</span>
+              Already registered? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: '600', textDecoration: 'none' }}>Sign In</Link>
             </p>
           </div>
         </div>
@@ -232,4 +227,4 @@ const Login = ({ onLogin }) => {
   );
 };
 
-export default Login;
+export default Signup;

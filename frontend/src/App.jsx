@@ -1,20 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Home from './pages/Home';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import StudentDashboard from './pages/StudentDashboard';
 import StaffDashboard from './pages/StaffDashboard';
 import ScanPass from './pages/ScanPass';
 
-function App() {
-  const [user, setUser] = useState(null);
+// Protected Route Component for security and simpler management
+const ProtectedRoute = ({ user, children, requiredRole }) => {
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  if (requiredRole && user.role !== requiredRole) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+function App() {
+  // Initialize state synchronously from localStorage to prevent "flash" of login screen
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (e) {
+      console.error("Failed to parse user from localStorage", e);
+      return null;
     }
-  }, []);
+  });
 
   const handleLogin = (userData) => {
     setUser(userData);
@@ -31,25 +44,40 @@ function App() {
     <Router>
       <div style={{ minHeight: '100vh', background: '#0f172a' }}>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route 
+            path="/" 
+            element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} 
+          />
+          <Route 
+            path="/signup" 
+            element={user ? <Navigate to="/dashboard" replace /> : <Signup onLogin={handleLogin} />} 
+          />
           <Route 
             path="/login" 
-            element={user ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />} 
+            element={user ? <Navigate to="/dashboard" replace /> : <Login onLogin={handleLogin} />} 
           />
           <Route 
             path="/dashboard" 
             element={
-              user ? (
-                user.role === 'staff' ? 
-                <StaffDashboard user={user} onLogout={handleLogout} /> : 
-                <StudentDashboard user={user} onLogout={handleLogout} />
-              ) : <Navigate to="/login" />
+              <ProtectedRoute user={user}>
+                {user?.role === 'staff' ? (
+                  <StaffDashboard user={user} onLogout={handleLogout} />
+                ) : (
+                  <StudentDashboard user={user} onLogout={handleLogout} />
+                )}
+              </ProtectedRoute>
             } 
           />
           <Route 
             path="/scan" 
-            element={user && user.role === 'staff' ? <ScanPass user={user} /> : <Navigate to="/login" />} 
+            element={
+              <ProtectedRoute user={user} requiredRole="staff">
+                <ScanPass user={user} />
+              </ProtectedRoute>
+            } 
           />
+          {/* Catch-all route redirects to root which handles auth logic */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </Router>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
+import { getFriendlyErrorMessage } from '../utils/errorUtils';
+
 
 const StaffDashboard = ({ user, onLogout }) => {
   const navigate = useNavigate();
@@ -13,7 +15,7 @@ const StaffDashboard = ({ user, onLogout }) => {
   const [loadingStats, setLoadingStats] = useState(true);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  
+
   // Student Preference Management State
   const [searchRegNo, setSearchRegNo] = useState('');
   const [foundStudent, setFoundStudent] = useState(null);
@@ -81,7 +83,7 @@ const StaffDashboard = ({ user, onLogout }) => {
       setMessage('Meal timing configuration updated successfully!');
     } catch (err) {
       console.error('Config update error:', err);
-      setError(err.response?.data?.message || 'Failed to update configuration');
+      setError(getFriendlyErrorMessage(err, 'Failed to update configuration'));
     }
   };
 
@@ -99,7 +101,7 @@ const StaffDashboard = ({ user, onLogout }) => {
       setSelectedMealOption(res.data.mealOption);
     } catch (err) {
       console.error('Fetch pass details error:', err);
-      setError(err.response?.data?.message || 'Pass ID not found / Invalid ID');
+      setError(getFriendlyErrorMessage(err, 'Pass ID not found / Invalid ID'));
     }
   };
 
@@ -129,7 +131,7 @@ const StaffDashboard = ({ user, onLogout }) => {
       }
     } catch (err) {
       console.error('Serve meal error:', err);
-      setError(err.response?.data?.message || 'Failed to serve meal');
+      setError(getFriendlyErrorMessage(err, 'Failed to serve meal'));
     }
   };
 
@@ -144,7 +146,7 @@ const StaffDashboard = ({ user, onLogout }) => {
       const res = await api.get(`/users/search/${searchRegNo.trim()}`, { headers });
       setFoundStudent(res.data);
     } catch (err) {
-      setPrefError(err.response?.data?.message || 'Student not found');
+      setPrefError(getFriendlyErrorMessage(err, 'Student not found'));
     } finally {
       setSearchLoading(false);
     }
@@ -158,7 +160,7 @@ const StaffDashboard = ({ user, onLogout }) => {
       setFoundStudent(prev => ({ ...prev, defaultMealPreference: res.data.defaultMealPreference }));
       setPrefMessage('Preference updated successfully.');
     } catch (err) {
-      setPrefError(err.response?.data?.message || 'Update failed');
+      setPrefError(getFriendlyErrorMessage(err, 'Update failed'));
     }
   };
 
@@ -166,8 +168,8 @@ const StaffDashboard = ({ user, onLogout }) => {
     <div className="container animate-fade-in">
       <header className="flex justify-between align-center" style={{ marginBottom: '2.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.875rem', fontWeight: '800', color: 'white', marginBottom: '0.25rem' }}>Mess & Meal Management</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Operations Dashboard • <span style={{ color: 'var(--primary)', fontWeight: '600' }}>{user.name}</span></p>
+          <h1 style={{ fontSize: '1.875rem', fontWeight: '800', color: 'white', marginBottom: '0.25rem' }}>DineFlow</h1>
+          <p style={{ color: 'var(--text-muted)' }}>Operations Console • <span style={{ color: 'var(--primary)', fontWeight: '600' }}>{user.name}</span></p>
         </div>
         <button onClick={onLogout} className="btn-danger flex align-center gap-2" style={{ fontWeight: '600' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
@@ -179,7 +181,7 @@ const StaffDashboard = ({ user, onLogout }) => {
       {message && <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '1rem', borderRadius: '0.75rem', border: '1px solid rgba(16, 185, 129, 0.2)', marginBottom: '2rem' }}>{message}</div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
-        
+
         <div>
           {/* Daily Stats Card */}
           <section className="glass-card" style={{ marginBottom: '2rem' }}>
@@ -194,22 +196,42 @@ const StaffDashboard = ({ user, onLogout }) => {
             {loadingStats ? (
               <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Refreshing metrics...</div>
             ) : (
-              <div className="stats-grid">
-                <div className="stat-item">
-                  <div className="stat-value" style={{ color: 'var(--success)' }}>{stats.vegCount}</div>
-                  <div className="stat-label">Veg</div>
+              <div style={{ display: 'grid', gap: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                  <div className="glass-card" style={{ padding: '1rem', textAlign: 'center' }}>
+                    <div style={{ color: 'var(--primary)', fontSize: '1.5rem', fontWeight: '800' }}>{stats.breakfastCount || 0}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Breakfast</div>
+                  </div>
+                  <div className="glass-card" style={{ padding: '1rem', textAlign: 'center' }}>
+                    <div style={{ color: 'var(--primary)', fontSize: '1.5rem', fontWeight: '800' }}>{stats.lunchCount || 0}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lunch</div>
+                  </div>
+                  <div className="glass-card" style={{ padding: '1rem', textAlign: 'center' }}>
+                    <div style={{ color: 'var(--primary)', fontSize: '1.5rem', fontWeight: '800' }}>{stats.dinnerCount || 0}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dinner</div>
+                  </div>
                 </div>
-                <div className="stat-item">
-                  <div className="stat-value" style={{ color: '#fb7185' }}>{stats.nonVegCount}</div>
-                  <div className="stat-label">Non-Veg</div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="glass-card" style={{ padding: '1rem', textAlign: 'center', borderLeft: '4px solid var(--success)' }}>
+                    <div style={{ color: 'var(--success)', fontSize: '1.5rem', fontWeight: '800' }}>{stats.vegCount}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Veg Preference</div>
+                  </div>
+                  <div className="glass-card" style={{ padding: '1rem', textAlign: 'center', borderLeft: '4px solid #fb7185' }}>
+                    <div style={{ color: '#fb7185', fontSize: '1.5rem', fontWeight: '800' }}>{stats.nonVegCount}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Non-Veg Preference</div>
+                  </div>
                 </div>
-                <div className="stat-item">
-                  <div className="stat-value" style={{ color: 'var(--primary)' }}>{stats.servedCount}</div>
-                  <div className="stat-label">Served</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-value" style={{ color: '#fbbf24' }}>{stats.pendingCount}</div>
-                  <div className="stat-label">Pending</div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="glass-card" style={{ padding: '1rem', textAlign: 'center', background: 'rgba(56, 189, 248, 0.1)' }}>
+                    <div style={{ color: 'var(--primary)', fontSize: '1.5rem', fontWeight: '800' }}>{stats.servedCount}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Served</div>
+                  </div>
+                  <div className="glass-card" style={{ padding: '1rem', textAlign: 'center', background: 'rgba(251, 191, 36, 0.1)' }}>
+                    <div style={{ color: '#fbbf24', fontSize: '1.5rem', fontWeight: '800' }}>{stats.pendingCount}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Pending</div>
+                  </div>
                 </div>
               </div>
             )}
@@ -224,7 +246,7 @@ const StaffDashboard = ({ user, onLogout }) => {
               <h3 style={{ fontSize: '1.125rem', fontWeight: '700' }}>Meal Verification</h3>
             </div>
 
-            <button 
+            <button
               onClick={() => navigate('/scan')}
               className="btn-primary flex align-center justify-center gap-2"
               style={{ width: '100%', padding: '1rem', marginBottom: '2rem', fontSize: '1rem' }}
@@ -251,9 +273,9 @@ const StaffDashboard = ({ user, onLogout }) => {
             </form>
 
             {scanStatus && (
-              <div style={{ 
-                padding: '1rem', 
-                borderRadius: '0.75rem', 
+              <div style={{
+                padding: '1rem',
+                borderRadius: '0.75rem',
                 marginBottom: '1.5rem',
                 textAlign: 'center',
                 background: scanStatus.status === 'VALID' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
@@ -265,39 +287,55 @@ const StaffDashboard = ({ user, onLogout }) => {
             )}
 
             {scannedPass && (
-              <div style={{ background: 'rgba(15, 23, 42, 0.4)', padding: '1.25rem', borderRadius: '1rem', border: '1px solid var(--card-border)' }}>
-                <div className="flex justify-between align-center" style={{ marginBottom: '1rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Student & Pass Details</span>
-                  <span className="badge badge-success">{scannedPass.mealSession}</span>
+              <div style={{ background: 'rgba(15, 23, 42, 0.4)', borderRadius: '1rem', border: '1px solid var(--card-border)', overflow: 'hidden' }}>
+                <div style={{ 
+                  padding: '1rem', 
+                  textAlign: 'center',
+                  background: scannedPass.isServed ? 'rgba(244, 63, 94, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                  borderBottom: `1px solid ${scannedPass.isServed ? 'var(--error)' : 'var(--success)'}`
+                }}>
+                  <h4 style={{ 
+                    fontSize: '1rem', 
+                    fontWeight: '800',
+                    color: scannedPass.isServed ? 'var(--error)' : 'var(--success)'
+                  }}>
+                    {scannedPass.isServed ? 'ALREADY SERVED' : 'PASS VALID'}
+                  </h4>
                 </div>
-                
-                <h4 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.25rem' }}>{scannedPass.student?.name}</h4>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>Reg No: {scannedPass.student?.registerNo}</p>
-                
-                {scannedPass.isServed ? (
-                  <div style={{ padding: '1rem', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '0.5rem', textAlign: 'center', border: '1px dashed var(--success)' }}>
-                    <p style={{ color: 'var(--success)', fontWeight: '700', fontSize: '0.875rem' }}>MEAL SERVED: {scannedPass.mealOption}</p>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Verified at {new Date(scannedPass.servedAt).toLocaleTimeString()}</p>
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(15, 23, 42, 0.2)', borderRadius: '0.5rem', border: '1px solid var(--card-border)' }}>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>MEAL OPTION</p>
-                      <p style={{ fontSize: '1rem', fontWeight: '700', color: scannedPass.mealOption === 'Veg' ? 'var(--success)' : '#fb7185' }}>
-                        {scannedPass.mealOption}
-                      </p>
-                    </div>
 
+                <div style={{ padding: '1.25rem' }}>
+                  <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+                    <p style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '0.125rem' }}>{scannedPass.student?.name}</p>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: '600' }}>{scannedPass.student?.registerNo}</p>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                    <div style={{ padding: '0.75rem', background: 'rgba(15, 23, 42, 0.3)', borderRadius: '0.5rem', border: '1px solid var(--card-border)' }}>
+                      <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Session</p>
+                      <p style={{ fontWeight: '700', fontSize: '0.875rem' }}>{scannedPass.mealSession}</p>
+                    </div>
+                    <div style={{ padding: '0.75rem', background: 'rgba(15, 23, 42, 0.3)', borderRadius: '0.5rem', border: '1px solid var(--card-border)' }}>
+                      <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Type</p>
+                      <p style={{ fontWeight: '700', fontSize: '0.875rem', color: scannedPass.mealOption === 'Veg' ? 'var(--success)' : '#fb7185' }}>{scannedPass.mealOption}</p>
+                    </div>
+                  </div>
+                  
+                  {scannedPass.isServed ? (
+                    <div style={{ padding: '0.75rem', background: 'rgba(15, 23, 42, 0.3)', borderRadius: '0.5rem', textAlign: 'center', border: '1px dashed var(--card-border)' }}>
+                      <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Served At</p>
+                      <p style={{ fontSize: '0.875rem', fontWeight: '600' }}>{new Date(scannedPass.servedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                  ) : (
                     <button
                       onClick={handleServeMeal}
                       className="btn-primary"
                       style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                     >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                      Serve Meal
+                      Confirm & Serve Meal
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </section>
@@ -311,7 +349,7 @@ const StaffDashboard = ({ user, onLogout }) => {
               <div style={{ padding: '0.5rem', background: 'var(--accent-glow)', borderRadius: '0.5rem' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
               </div>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: '700' }}>Student Preference Management</h3>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: '700' }}>Student Management</h3>
             </div>
 
             <form onSubmit={handleSearchStudent} className="flex gap-2" style={{ marginBottom: foundStudent ? '1.5rem' : '0' }}>
@@ -331,32 +369,63 @@ const StaffDashboard = ({ user, onLogout }) => {
             {prefMessage && <p style={{ color: 'var(--success)', fontSize: '0.8125rem', marginTop: '0.5rem' }}>{prefMessage}</p>}
 
             {foundStudent && (
-              <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '0.75rem', border: '1px solid var(--card-border)' }}>
-                <div style={{ marginBottom: '1rem' }}>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Student Name</p>
-                  <p style={{ fontWeight: '600' }}>{foundStudent.name}</p>
+              <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ padding: '1.25rem', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '0.75rem', border: '1px solid var(--card-border)' }}>
+                  <div className="flex justify-between align-start" style={{ marginBottom: '1.25rem' }}>
+                    <div>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Student Identity</p>
+                      <p style={{ fontWeight: '700', fontSize: '1.125rem' }}>{foundStudent.name}</p>
+                      <p style={{ color: 'var(--primary)', fontWeight: '600', fontSize: '0.875rem' }}>{foundStudent.registerNo}</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Preference</p>
+                      <span className={`badge ${foundStudent.defaultMealPreference === 'Veg' ? 'badge-success' : 'badge-pending'}`} style={{ display: 'inline-block', marginTop: '0.25rem' }}>
+                        {foundStudent.defaultMealPreference}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: '1rem' }}>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.75rem', textTransform: 'uppercase' }}>Quick Actions</p>
+                    <div className="flex gap-2">
+                      {['Veg', 'Non-Veg'].map(opt => (
+                        <button
+                          key={opt}
+                          onClick={() => handleUpdateStudentPreference(opt)}
+                          style={{
+                            flex: 1, padding: '0.5rem', borderRadius: '0.5rem', fontSize: '0.8125rem', fontWeight: '700',
+                            background: foundStudent.defaultMealPreference === opt ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                            color: foundStudent.defaultMealPreference === opt ? '#0f172a' : 'white',
+                            border: `1px solid ${foundStudent.defaultMealPreference === opt ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}`,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Set {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div style={{ marginBottom: '1rem' }}>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Register Number</p>
-                  <p style={{ fontWeight: '600' }}>{foundStudent.registerNo}</p>
-                </div>
-                <div>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Current Preference</p>
-                  <div className="flex gap-2">
-                    {['Veg', 'Non-Veg'].map(opt => (
-                      <button
-                        key={opt}
-                        onClick={() => handleUpdateStudentPreference(opt)}
-                        style={{ 
-                          flex: 1, padding: '0.5rem', borderRadius: '0.5rem', fontSize: '0.8125rem', fontWeight: '600',
-                          background: foundStudent.defaultMealPreference === opt ? 'var(--primary)' : 'transparent',
-                          color: foundStudent.defaultMealPreference === opt ? '#0f172a' : 'var(--text-main)',
-                          border: `1px solid ${foundStudent.defaultMealPreference === opt ? 'var(--primary)' : 'var(--card-border)'}`
-                        }}
-                      >
-                        {opt}
-                      </button>
-                    ))}
+
+                {/* Today's Passes Table/List */}
+                <div style={{ padding: '1.25rem', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '0.75rem', border: '1px solid var(--card-border)' }}>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', textTransform: 'uppercase' }}>Today's Passes</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {['Breakfast', 'Lunch', 'Dinner'].map(session => {
+                      const pass = foundStudent.todayPasses?.find(p => p.mealSession === session);
+                      return (
+                        <div key={session} className="flex justify-between align-center" style={{ padding: '0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem' }}>
+                          <span style={{ fontWeight: '600', fontSize: '0.875rem' }}>{session}</span>
+                          {!pass ? (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Not Booked</span>
+                          ) : (
+                            <span className={`badge ${pass.isServed ? 'badge-success' : 'badge-pending'}`} style={{ fontSize: '0.7rem' }}>
+                              {pass.isServed ? 'Served' : 'Pending'}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -372,7 +441,7 @@ const StaffDashboard = ({ user, onLogout }) => {
               <h3 style={{ fontSize: '1.125rem', fontWeight: '700' }}>Session Setup</h3>
             </div>
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>Define operational windows for hostel mess. These settings are applied daily.</p>
-            
+
             <form onSubmit={handleUpdateConfig}>
               <div className="form-group">
                 <label>Select Session</label>

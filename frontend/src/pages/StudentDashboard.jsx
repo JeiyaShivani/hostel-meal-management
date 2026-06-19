@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/api';
 import { QRCodeSVG } from 'qrcode.react';
+import { getFriendlyErrorMessage } from '../utils/errorUtils';
+
 
 const StudentDashboard = ({ user, onLogout }) => {
   const [mealConfigs, setMealConfigs] = useState([]);
@@ -64,7 +66,7 @@ const StudentDashboard = ({ user, onLogout }) => {
       fetchData(); // Refresh pass details
     } catch (err) {
       console.error('Booking error:', err);
-      setError(err.response?.data?.message || 'Failed to book meal pass');
+      setError(getFriendlyErrorMessage(err, 'Failed to book meal pass'));
     }
   };
 
@@ -77,8 +79,8 @@ const StudentDashboard = ({ user, onLogout }) => {
     <div className="container animate-fade-in">
       <header className="flex justify-between align-center" style={{ marginBottom: '2.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.875rem', fontWeight: '800', color: 'white', marginBottom: '0.25rem' }}>Student Dashboard</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Welcome back, <span style={{ color: 'var(--primary)', fontWeight: '600' }}>{user.name}</span></p>
+          <h1 style={{ fontSize: '1.875rem', fontWeight: '800', color: 'white', marginBottom: '0.25rem' }}>DineFlow</h1>
+          <p style={{ color: 'var(--text-muted)' }}>Student Portal • <span style={{ color: 'var(--primary)', fontWeight: '600' }}>{user.name}</span></p>
         </div>
         <button onClick={onLogout} className="btn-danger flex align-center gap-2" style={{ fontWeight: '600' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
@@ -105,17 +107,17 @@ const StudentDashboard = ({ user, onLogout }) => {
               <h3 style={{ fontSize: '1.25rem', fontWeight: '700' }}>Today's Meal Availability</h3>
               <span className="badge badge-success" style={{ marginLeft: 'auto' }}>{todayStr}</span>
             </div>
-            
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
               {['Breakfast', 'Lunch', 'Dinner'].map(sessionName => {
                 const config = mealConfigs.find(c => c.mealSession === sessionName) || { startTime: '--:--', endTime: '--:--', choiceEnabled: true };
                 const pass = getTodayPassForSession(sessionName);
 
                 return (
-                  <div key={sessionName} style={{ 
-                    background: 'rgba(15, 23, 42, 0.5)', 
-                    padding: '1.5rem', 
-                    borderRadius: '1rem', 
+                  <div key={sessionName} style={{
+                    background: 'rgba(15, 23, 42, 0.5)',
+                    padding: '1.5rem',
+                    borderRadius: '1rem',
                     border: '1px solid var(--card-border)',
                     display: 'flex',
                     flexDirection: 'column'
@@ -140,12 +142,34 @@ const StudentDashboard = ({ user, onLogout }) => {
                         <div className="qr-container" style={{ margin: '0.5rem auto' }}>
                           <QRCodeSVG value={pass._id} size={140} level="H" />
                         </div>
-                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontFamily: 'monospace', margin: '0.5rem 0' }}>PASS_ID: {pass._id}</p>
-                        <div style={{ marginTop: '0.5rem' }}>
+                        
+                        <div style={{ marginTop: '1rem' }}>
                           {pass.isServed ? (
-                            <span className="badge badge-success">✓ SERVED AT {new Date(pass.servedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            <div style={{ 
+                              padding: '1rem', 
+                              background: 'rgba(16, 185, 129, 0.1)', 
+                              borderRadius: '0.75rem', 
+                              border: '1px solid var(--success)',
+                              color: 'var(--success)',
+                              textAlign: 'center'
+                            }}>
+                              <div style={{ fontSize: '0.875rem', fontWeight: '500', opacity: 0.8 }}>Status: <span style={{ fontWeight: '800' }}>Served</span></div>
+                              <div style={{ fontSize: '0.875rem', fontWeight: '700', marginTop: '0.25rem' }}>
+                                Served at: {new Date(pass.servedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                              </div>
+                            </div>
                           ) : (
-                            <span className="badge badge-pending">PENDING VERIFICATION</span>
+                            <div style={{ 
+                              padding: '1rem', 
+                              background: 'rgba(251, 191, 36, 0.1)', 
+                              borderRadius: '0.75rem', 
+                              border: '1px solid var(--warning)',
+                              color: 'var(--warning)',
+                              textAlign: 'center'
+                            }}>
+                              <div style={{ fontSize: '0.875rem', fontWeight: '500', opacity: 0.8 }}>Status: <span style={{ fontWeight: '800' }}>Pending</span></div>
+                              <p style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>Ready for verification</p>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -156,7 +180,7 @@ const StudentDashboard = ({ user, onLogout }) => {
                             Generate your digital token for this session. Your default meal preference will be applied automatically.
                           </p>
                         </div>
-                        <button 
+                        <button
                           onClick={() => handleBookPass(sessionName)}
                           className="btn-primary"
                           style={{ width: '100%', fontSize: '0.875rem' }}

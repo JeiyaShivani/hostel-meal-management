@@ -26,23 +26,33 @@ const seedUsers = async () => {
     const hashedPassword = await bcrypt.hash('password123', salt);
 
     // Create seed data
-    const users = [
-      {
-        name: 'Karthik',
-        registerNo: '22CSR001',
-        password: hashedPassword,
-        role: 'student'
-      },
-      {
-        name: 'Staff Admin',
-        registerNo: 'STAFF001',
-        password: hashedPassword,
-        role: 'staff'
-      }
+    const studentNames = [
+      'Karthik', 'Arun', 'Praveen', 'Hari', 'Rahul', 
+      'Akash', 'Vignesh', 'Sanjay', 'Manoj', 'Deepak', 
+      'Surya', 'Vijay', 'Naveen', 'Rajesh', 'Kamal'
     ];
 
+    const students = studentNames.map((name, index) => ({
+      name,
+      registerNo: `22CSR${(index + 1).toString().padStart(3, '0')}`,
+      password: hashedPassword,
+      role: 'student',
+      defaultMealPreference: 'Veg'
+    }));
+
+    const staffMembers = [
+      { name: 'Kitchen Admin', registerNo: 'STAFF001', role: 'staff' },
+      { name: 'Mess Supervisor', registerNo: 'STAFF002', role: 'staff' },
+      { name: 'Hostel Warden', registerNo: 'STAFF003', role: 'staff' }
+    ].map(staff => ({
+      ...staff,
+      password: hashedPassword
+    }));
+
+    const allUsers = [...students, ...staffMembers];
+
     // Insert to database
-    await User.insertMany(users);
+    await User.insertMany(allUsers);
     console.log('Database seeded with sample users successfully.');
 
     // Disconnect

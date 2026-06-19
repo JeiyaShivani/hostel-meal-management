@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import api from '../api/api';
+import { getFriendlyErrorMessage } from '../utils/errorUtils';
+
 
 const ScanPass = ({ user }) => {
   const [passIdInput, setPassIdInput] = useState('');
@@ -31,12 +33,12 @@ const ScanPass = ({ user }) => {
     };
 
     const scanner = new Html5QrcodeScanner("reader", config, false);
-    
+
     const onScanSuccess = (decodedText) => {
       console.log(`Scan success: ${decodedText}`);
       setPassIdInput(decodedText);
       fetchPassDetails(decodedText);
-      
+
       // Stop scanner after success
       scanner.clear().catch(error => console.error("Failed to clear scanner", error));
       setScanning(false);
@@ -69,7 +71,7 @@ const ScanPass = ({ user }) => {
       setScannedPass(res.data);
     } catch (err) {
       console.error('Fetch pass details error:', err);
-      setError(err.response?.data?.message || 'Invalid Pass ID');
+      setError(getFriendlyErrorMessage(err, 'Invalid Pass ID'));
     }
   };
 
@@ -94,7 +96,7 @@ const ScanPass = ({ user }) => {
       }
     } catch (err) {
       console.error('Serve meal error:', err);
-      setError(err.response?.data?.message || 'Failed to serve meal');
+      setError(getFriendlyErrorMessage(err, 'Failed to serve meal'));
     }
   };
 
@@ -115,9 +117,24 @@ const ScanPass = ({ user }) => {
       {error && <div style={{ background: 'rgba(244, 63, 94, 0.1)', color: 'var(--error)', padding: '0.75rem', borderRadius: '0.75rem', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
 
       {!scannedPass && (
-        <div className="glass-card" style={{ padding: '1rem', textAlign: 'center' }}>
-          <div id="reader" style={{ width: '100%', overflow: 'hidden', borderRadius: '1rem', border: 'none' }}></div>
-          
+        <div className="glass-card" style={{ 
+          padding: '1rem', 
+          textAlign: 'center', 
+          maxWidth: '100vw', 
+          overflowX: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center' 
+        }}>
+          <div id="reader" style={{ 
+            width: '100%', 
+            overflow: 'hidden', 
+            borderRadius: '1.25rem', 
+            border: 'none', 
+            maxWidth: '480px',
+            margin: '0 auto' 
+          }}></div>
+
           <div style={{ marginTop: '2rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>OR ENTER MANUALLY</p>
             <div className="flex gap-2">
@@ -135,61 +152,85 @@ const ScanPass = ({ user }) => {
       )}
 
       {scannedPass && (
-        <div className="glass-card animate-fade-in" style={{ padding: '1.5rem' }}>
-          <div className="flex justify-between align-center" style={{ marginBottom: '1rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.75rem' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Scan Success</span>
-            <span className="badge badge-success">{scannedPass.mealSession}</span>
-          </div>
-
-          <div style={{ marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.25rem' }}>{scannedPass.student?.name}</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Reg No: {scannedPass.student?.registerNo}</p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div style={{ padding: '0.75rem', background: 'rgba(15, 23, 42, 0.3)', borderRadius: '0.5rem' }}>
-              <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Option</p>
-              <p style={{ fontWeight: '700', color: scannedPass.mealOption === 'Veg' ? 'var(--success)' : '#fb7185' }}>{scannedPass.mealOption}</p>
-            </div>
-            <div style={{ padding: '0.75rem', background: 'rgba(15, 23, 42, 0.3)', borderRadius: '0.5rem' }}>
-              <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Status</p>
-              <p style={{ fontWeight: '700', color: scannedPass.isServed ? 'var(--error)' : 'var(--warning)' }}>
-                {scannedPass.isServed ? 'Already Served' : 'Pending'}
-              </p>
-            </div>
-          </div>
-
-          {scanStatus ? (
-            <div style={{ 
-              padding: '1rem', 
-              borderRadius: '0.75rem', 
-              textAlign: 'center',
-              background: scanStatus.status === 'VALID' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
-              border: `1px solid ${scanStatus.status === 'VALID' ? 'var(--success)' : 'var(--error)'}`,
-              marginBottom: '1.5rem'
+        <div className="glass-card animate-fade-in" style={{ padding: '0', overflow: 'hidden' }}>
+          {/* Status Header */}
+          <div style={{ 
+            padding: '1.5rem', 
+            textAlign: 'center',
+            background: scannedPass.isServed ? 'rgba(244, 63, 94, 0.1)' : 
+                       (scanStatus?.status === 'VALID' ? 'rgba(16, 185, 129, 0.1)' : 
+                       (scanStatus?.status === 'EXPIRED' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(15, 23, 42, 0.3)')),
+            borderBottom: `1px solid ${scannedPass.isServed ? 'var(--error)' : 
+                                      (scanStatus?.status === 'VALID' ? 'var(--success)' : 
+                                      (scanStatus?.status === 'EXPIRED' ? 'var(--warning)' : 'var(--card-border)'))}`
+          }}>
+            <h2 style={{ 
+              fontSize: '1.5rem', 
+              fontWeight: '800', 
+              color: scannedPass.isServed ? 'var(--error)' : 
+                     (scanStatus?.status === 'VALID' ? 'var(--success)' : 
+                     (scanStatus?.status === 'EXPIRED' ? 'var(--warning)' : 'white')) 
             }}>
-              <div style={{ fontWeight: '700', color: scanStatus.status === 'VALID' ? 'var(--success)' : 'var(--error)' }}>{scanStatus.message}</div>
+              {scannedPass.isServed ? 'ALREADY SERVED' : (scanStatus?.message || 'PASS DETECTED')}
+            </h2>
+            <p style={{ fontSize: '0.875rem', opacity: 0.8 }}>Verification Result</p>
+          </div>
+
+          <div style={{ padding: '1.5rem' }}>
+            {/* Student Info */}
+            <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Student</p>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '700' }}>{scannedPass.student?.name}</h3>
+              <p style={{ color: 'var(--primary)', fontWeight: '600' }}>{scannedPass.student?.registerNo}</p>
             </div>
-          ) : (
-            !scannedPass.isServed && (
-              <button 
+
+            {/* Pass Details Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ padding: '1rem', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '0.75rem', border: '1px solid var(--card-border)' }}>
+                <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Session</p>
+                <p style={{ fontWeight: '700' }}>{scannedPass.mealSession}</p>
+              </div>
+              <div style={{ padding: '1rem', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '0.75rem', border: '1px solid var(--card-border)' }}>
+                <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Meal Type</p>
+                <p style={{ fontWeight: '700', color: scannedPass.mealOption === 'Veg' ? 'var(--success)' : '#fb7185' }}>{scannedPass.mealOption}</p>
+              </div>
+            </div>
+
+            {/* Served Time if exists */}
+            {scannedPass.isServed && (
+              <div style={{ 
+                padding: '1rem', 
+                background: 'rgba(15, 23, 42, 0.4)', 
+                borderRadius: '0.75rem', 
+                border: '1px solid var(--card-border)',
+                marginBottom: '1.5rem',
+                textAlign: 'center'
+              }}>
+                <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Previously Served At</p>
+                <p style={{ fontWeight: '700' }}>{new Date(scannedPass.servedAt).toLocaleString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })}</p>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            {!scannedPass.isServed && !scanStatus && (
+              <button
                 onClick={handleServeMeal}
-                className="btn-primary" 
+                className="btn-primary"
                 style={{ width: '100%', padding: '1rem', fontSize: '1.125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1rem' }}
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 Confirm & Serve
               </button>
-            )
-          )}
+            )}
 
-          <button 
-            onClick={resetScanner} 
-            className="btn-danger" 
-            style={{ width: '100%', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.875rem' }}
-          >
-            {scanStatus ? 'Scan Next Pass' : 'Cancel & Re-scan'}
-          </button>
+            <button
+              onClick={resetScanner}
+              className="btn-danger"
+              style={{ width: '100%', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.875rem' }}
+            >
+              {scanStatus || scannedPass.isServed ? 'Scan Next Pass' : 'Cancel & Re-scan'}
+            </button>
+          </div>
         </div>
       )}
 
